@@ -151,7 +151,7 @@ print(result.allowed, result.reason)  # False — not in allowlist
 
 | Python | agent-os-kernel |
 |--------|----------------|
-| ≥ 3.10 | ≥ 3.0.0, < 4.0.0 |
+| \u2265 3.10 | \u2265 3.0.0, < 4.0.0 |
 
 ## License
 
