@@ -99,7 +99,7 @@ print(result.allowed, result.reason)  # False — not in allowlist
 | Export | Source | Description |
 |--------|--------|-------------|
 | `MCPSessionAuthenticator` | `agent_os.mcp_session_auth` | Creates, validates, and revokes cryptographic session tokens |
-| `MCPSession` | `agent_os.mcp_session_auth` | An authenticated MCP session bound to an agent identity |
+| `MCPSession` | `agent_os.mcp_session_auth` | An authenticated MCP session bound to an identity |
 
 ### Message signing / verification
 
@@ -156,3 +156,4 @@ print(result.allowed, result.reason)  # False — not in allowlist
 ## License
 
 [MIT](../../LICENSE) — Copyright (c) Microsoft Corporation.
+
