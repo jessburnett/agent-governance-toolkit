@@ -45,7 +45,7 @@ Metrics
 from __future__ import annotations
 
 # NOTE: __version__ must match the [project] version in pyproject.toml.
-__version__ = "3.5.0"
+__version__ = "0.1.0"
 
 # ── Tool-poisoning defence ────────────────────────────────────────────────────
 from agent_os.mcp_security import (
