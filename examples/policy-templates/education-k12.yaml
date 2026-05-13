@@ -1,0 +1,118 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+#
+# OWASP ASI Starter Policy: Education (K-12)
+# Maps to:
+# - OWASP Agentic Security Initiatives (ASI) Top 10
+# - COPPA 2026 (Biometric & Non-Biometric PII)
+# - EU AI Act Article 5 (Prohibition of Emotion Recognition)
+#
+# ⚠️  IMPORTANT: This is a STARTER policy for High-Risk Educational contexts.
+# You MUST verify parental consent state in your metadata before deployment.
+
+version: "1.0"
+name: education-k12-asi-starter
+description: >
+  Governance starter pack for K-12 educational agents. Enforces Socratic
+  learning patterns (ASI-01/10), prohibits emotional inference (EU AI Act Art 5),
+  and protects 2026-defined biometric PII (COPPA).
+
+rules:
+  # =========================================================================
+  # ASI-01/10: Socratic Learning & Goal Integrity
+  # Prevents agents from giving direct answers and forces pedagogical guidance.
+  # =========================================================================
+
+  - name: edu-socratic-bypass-prevention
+    condition: {field: output, operator: matches, value: "(?i)(the\\s+(answer|result|solution|conclusion|output)\\s+is|final\\s+(result|answer)\\s*:|solution\\s*:|answer\\s*:|\\d+\\s+is\\s+the\\s+answer)"}
+    action: deny
+    priority: 100
+    message: "ASI-01/10: Socratic Violation — Direct answer delivery detected. Redact and provide a hint instead."
+
+  - name: edu-socratic-hint-required
+    condition: {field: is_hint, operator: ne, value: true}
+    action: deny
+    priority: 95
+    message: "ASI-01: Pedagogical Integrity — Only hints are allowed in this context."
+
+  - name: edu-allow-socratic-hints
+    condition: {field: is_hint, operator: eq, value: true}
+    action: allow
+    priority: 90
+
+  # =========================================================================
+  # ASI-09: Trust Exploitation & Parasocial Guardrails
+  # Blocks emotional manipulation and sycophantic bond-building.
+  # =========================================================================
+
+  - name: edu-parasocial-bond-prevention
+    condition: {field: output, operator: matches, value: "(?i)(i\\s+love\\s+you|you\\s+are\\s+my\\s+best\\s+friend|only\\s+i\\s+understand\\s+you|i\\'m\\s+the\\s+only\\s+one\\s+you\\s+need)"}
+    action: deny
+    priority: 100
+    message: "ASI-09: Trust Exploitation — Parasocial/Emotional manipulation detected."
+
+  - name: edu-identity-reset-trigger
+    condition: {field: sentiment_reliance, operator: gt, value: 0.8}
+    action: block
+    priority: 95
+    message: "ASI-09: Sycophancy Trap — High reliance detected. Triggering identity reset: 'I am an AI, not a friend.'"
+
+  # =========================================================================
+  # COPPA 2026 & EU AI Act Compliance
+  # =========================================================================
+
+  - name: edu-ban-emotion-recognition
+    condition: {field: action, operator: matches, value: "(?i)(detect_emotion|analyze_sentiment_emotional|infer_mood|assess_affect|monitor_psychological|track_sentiment)"}
+    action: deny
+    priority: 100
+    message: "EU AI Act Art 5: PROHIBITED — Emotion recognition is banned in educational settings."
+
+  - name: edu-block-biometric-leak
+    condition: {field: output, operator: matches, value: "(?i)(voiceprint[\\s.-]?id|face[\\s.-]?mesh|biometric[\\s.-]?template)"}
+    action: deny
+    priority: 100
+    message: "COPPA 2026: PII — Unauthorized biometric identifier leakage detected."
+
+  - name: edu-coppa-minor-location-block
+    condition: {field: user_age, operator: lt, value: 13}
+    action: deny
+    priority: 110
+    message: "COPPA 2026: Protected Class — Automated location/data collection for users < 13 is restricted."
+
+  - name: edu-parental-consent-check
+    condition: {field: metadata.parental_consent_verified, operator: ne, value: true}
+    action: deny
+    priority: 100
+    message: "COPPA 2026: Verifiable Parental Consent (VPC) missing for this session."
+
+  - name: edu-block-pii-ssn
+    condition: {field: output, operator: matches, value: "\\b\\d{3}[\\s._-]?\\d{2}[\\s._-]?\\d{4}\\b"}
+    action: deny
+    priority: 100
+    message: "ASI-01/06: PII — Social Security Number pattern detected in output."
+
+  # =========================================================================
+  # ASI-04: Supply Chain & Tool Safety
+  # =========================================================================
+
+  - name: edu-restrict-untrusted-tools
+    condition: {field: tool_source, operator: ne, value: "edu-certified-registry"}
+    action: deny
+    priority: 100
+    message: "ASI-04: Supply Chain — Untrusted tool source detected in educational context."
+
+  - name: edu-allow-certified-tools
+    condition: {field: tool_source, operator: eq, value: "edu-certified-registry"}
+    action: allow
+    priority: 50
+
+  - name: edu-allow-read-operations
+    condition: {field: action, operator: matches, value: "^(read_|search_|lookup_|list_|get_|calculate_|analyze_)"}
+    action: allow
+    priority: 45
+
+defaults:
+  action: deny
+  max_tokens: 4000
+  confidence_threshold: 0.90
+  audit_level: high

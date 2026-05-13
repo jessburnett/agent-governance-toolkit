@@ -18,7 +18,7 @@ The `tests/redteam/test_asi.py` script executes high-fidelity social engineering
 pytest tests/redteam/ -v
 ```
 
-**Output**: Generates a detailed audit report at `docs/ADVERSARIAL-AUDIT-REPORT.md`. All security-hardened rules should achieve a **100% block rate**.
+**Output**: Generates a detailed audit report at `docs/redteam/ADVERSARIAL-AUDIT-REPORT.md`. All security-hardened rules should achieve a **100% block rate**.
 
 You can also run it directly to regenerate the report:
 
