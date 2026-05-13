@@ -348,7 +348,7 @@ rules:
   # =========================================================================
 
   - name: asi06-block-pii-ssn
-    condition: {field: output, operator: matches, value: "\\b\\d{3}-\\d{2}-\\d{4}\\b"}
+    condition: {field: output, operator: matches, value: "\\b\\d{3}[\\s.-]?\\d{2}[\\s.-]?\\d{4}\\b"}
     action: deny
     priority: 100
     message: "ASI-01/06: PII: Social Security Number pattern detected in output"
@@ -412,6 +412,6 @@ rules:
 
 defaults:
   action: deny
-  max_tokens: 12000
-  max_tool_calls: 30
-  confidence_threshold: 0.85
+  max_tokens: 16384
+  max_tool_calls: 50
+  confidence_threshold: 0.80
