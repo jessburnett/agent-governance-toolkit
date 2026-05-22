@@ -66,7 +66,10 @@ def _evaluate_condition(condition: dict, context: dict) -> bool:
     if operator == "contains":
         return value in ctx_value
     if operator == "matches":
-        return bool(re.match(str(value), str(ctx_value)))
+        # re.search (not re.match) to mirror the runtime PolicyEvaluator;
+        # anchored patterns (^...$) still anchor, but mid-string patterns
+        # like the SSN \b...\b regex now match as the evaluator intends.
+        return bool(re.search(str(value), str(ctx_value)))
 
     return False
 
