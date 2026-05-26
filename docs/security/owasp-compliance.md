@@ -2,6 +2,8 @@
 
 # 🛡️ OWASP Agentic Top 10 — Compliance Mapping
 
+<!-- cspell:ignore Gefi Divf -->
+
 **How the Agent Governance stack covers the [OWASP Top 10 for Agentic Applications (2026)](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/)**
 
 </div>
@@ -201,7 +203,7 @@ channel = await bridge.open_secure_channel("did:mesh:bob", bob_bundle)
 ciphertext = channel.send(b"governed action")  # E2E encrypted
 ```
 
-**Component:** [AgentMesh](https://github.com/microsoft/agent-governance-toolkit) — IATP protocol, trust scoring, E2E encryption ([Tutorial 32](tutorials/32-e2e-encrypted-messaging.md))
+**Component:** [AgentMesh](https://github.com/microsoft/agent-governance-toolkit) — IATP protocol, trust scoring, E2E encryption ([Tutorial 32](../tutorials/32-e2e-encrypted-messaging.md))
 
 ---
 
@@ -329,6 +331,6 @@ child = identity.delegate(
 
 *Last updated: March 2026*
 
-**[⬅ Back to README](../README.md)** · **[🛡️ MCP Top 10 Mapping](compliance/mcp-owasp-top10-mapping.md)** · **[📈 Traction](TRACTION.md)**
+**[⬅ Back to README](../../README.md)** · **[🛡️ MCP Top 10 Mapping](../compliance/mcp-owasp-top10-mapping.md)** · **[📈 Traction](../../agent-governance-python/agent-compliance/docs/TRACTION.md)**
 
 </div>

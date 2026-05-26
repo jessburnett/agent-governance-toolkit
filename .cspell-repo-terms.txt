@@ -46,6 +46,7 @@ comspec
 containerapps
 containerd
 contoso
+COPPA
 Cpus
 cref
 CrewAI
@@ -124,6 +125,7 @@ IPFS
 isinstance
 isoformat
 isort
+jessburnett
 jwkjwks
 kanish
 kata
@@ -179,6 +181,7 @@ OpenAI
 OpenClaw
 openshell
 ospo
+Parasocial
 parseability
 pathext
 pathlib
@@ -210,6 +213,7 @@ pyyaml
 Ravande
 readouterr
 recognised
+redteam
 Rego
 relativedelta
 removeprefix

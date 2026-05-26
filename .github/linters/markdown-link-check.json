@@ -34,6 +34,7 @@
     { "pattern": "spec\\.modelcontextprotocol\\.io" },
     { "pattern": "eur-lex\\.europa\\.eu" },
     { "pattern": "aicpa\\.org" },
+    { "pattern": "imda\\.gov\\.sg" },
     { "pattern": "pdpc\\.gov\\.sg" },
     { "pattern": "pipc\\.go\\.kr" },
     { "pattern": "msit\\.go\\.kr" },
