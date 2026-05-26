@@ -7,9 +7,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 import yaml
 
-from agent_os.policies.cli import main
+from agent_os.policies.cli import _evaluate_condition, main
+from agent_os.policies.evaluator import _match_condition
 from agent_os.policies.schema import (
     PolicyAction,
     PolicyCondition,
@@ -403,3 +405,59 @@ class TestCLIEntryPoint:
         rc = main(["validate", str(yaml_path)])
         assert rc == 0
         assert "OK" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# `matches` operator: re.search parity with the runtime evaluator.
+# Regression guard for the CLI/evaluator divergence documented in
+# docs/security-audits/2026-05-26-policies-cli-research-matcher.md — the CLI
+# previously used re.match (anchored) while PolicyEvaluator uses re.search.
+# ---------------------------------------------------------------------------
+
+# Mid-string SSN detector: re.match would anchor at start and miss it.
+SSN_PATTERN = r"\b\d{3}-\d{2}-\d{4}\b"
+
+
+class TestMatchesOperatorReSearch:
+    """`_evaluate_condition` must use re.search, mirroring `_match_condition`."""
+
+    def test_mid_string_pattern_matches(self) -> None:
+        condition = {"field": "text", "operator": "matches", "value": SSN_PATTERN}
+        context = {"text": "patient ssn is 123-45-6789, please redact"}
+        # Would be False under the old re.match (pattern not anchored at start).
+        assert _evaluate_condition(condition, context) is True
+
+    def test_anchored_pattern_still_anchors(self) -> None:
+        condition = {"field": "mode", "operator": "matches", "value": r"^allow$"}
+        assert _evaluate_condition(condition, {"mode": "allow"}) is True
+        assert _evaluate_condition(condition, {"mode": "please allow"}) is False
+
+    def test_no_match_returns_false(self) -> None:
+        condition = {"field": "text", "operator": "matches", "value": SSN_PATTERN}
+        assert _evaluate_condition(condition, {"text": "no sensitive id here"}) is False
+
+    @pytest.mark.parametrize(
+        ("pattern", "ctx_value", "expected"),
+        [
+            (SSN_PATTERN, "ssn 123-45-6789 here", True),  # mid-string
+            (SSN_PATTERN, "123-45-6789", True),  # whole string
+            (SSN_PATTERN, "12-345-6789", False),  # wrong shape
+            (r"^secret", "secret token", True),  # anchored start matches
+            (r"^secret", "my secret", False),  # anchored start fails mid-string
+        ],
+    )
+    def test_cli_matches_evaluator(self, pattern, ctx_value, expected) -> None:
+        """CLI `_evaluate_condition` returns the same result as the evaluator's
+        `_match_condition` for the `matches` operator."""
+        cli_result = _evaluate_condition(
+            {"field": "text", "operator": "matches", "value": pattern},
+            {"text": ctx_value},
+        )
+        eval_result = _match_condition(
+            PolicyCondition(
+                field="text", operator=PolicyOperator.MATCHES, value=pattern
+            ),
+            {"text": ctx_value},
+        )
+        assert cli_result is expected
+        assert cli_result == eval_result
