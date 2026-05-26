@@ -27,7 +27,7 @@ from agent_os.policies.evaluator import PolicyEvaluator
 
 # Paths
 REPO_ROOT = Path(__file__).resolve().parents[2]
-STARTERS_DIR = REPO_ROOT / "templates" / "policies" / "starters"
+STARTERS_DIR = REPO_ROOT / "examples" / "policy-templates"
 DOCS_DIR = REPO_ROOT / "docs"
 
 @dataclass
