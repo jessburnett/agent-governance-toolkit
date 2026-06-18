@@ -1,0 +1,311 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+#
+# OWASP ASI Starter Policy: Education (K-12 + child-safety)
+# Maps to:
+# - OWASP Agentic Security Initiatives (ASI) Top 10
+# - COPPA 2026 (Biometric & Non-Biometric PII, Verifiable Parental Consent)
+# - EU AI Act Article 5 (Prohibition of Emotion Recognition)
+# - EU AI Act Article 12 (Tamper-evident audit logs)
+#
+# ⚠️  IMPORTANT: This is a STARTER policy for High-Risk Educational and
+# minor-facing contexts. You MUST verify parental-consent state in your
+# metadata and your jurisdiction's child-safety obligations before deployment.
+
+version: "1.0"
+name: education-asi-starter
+description: >
+  Governance starter pack for K-12 and minor-facing educational agents.
+  Enforces Socratic learning patterns (ASI-01/10), prohibits emotional
+  inference (EU AI Act Art 5), protects 2026-defined biometric PII (COPPA),
+  and layers child-safety controls — grooming, self-harm escalation, contact
+  solicitation, and in-person meeting arrangement — on top of the full
+  ASI-01..10 hard-gates.
+
+rules:
+  # =========================================================================
+  # Child-Safety Domain — highest priority, minor-specific protections
+  # =========================================================================
+
+  - name: cs-block-grooming
+    condition: {field: output, operator: matches, value: "(?i)(don'?t\\s+tell\\s+(your|anyone|mom|dad|parents)|our\\s+little\\s+secret|keep\\s+this\\s+(a\\s+)?secret|send\\s+me\\s+a\\s+(pic|picture|photo|selfie)|are\\s+you\\s+(home\\s+)?alone)"}
+    action: deny
+    priority: 120
+    message: "CHILD-SAFETY: Grooming/predatory pattern detected — blocked and flagged for review"
+
+  - name: cs-escalate-self-harm
+    condition: {field: output, operator: matches, value: "(?i)(kill\\s+(yourself|myself)|how\\s+to\\s+(hurt|harm)\\s+(yourself|myself)|ways?\\s+to\\s+(die|end\\s+it)|end\\s+(your|my)\\s+life|suicide\\s+(method|plan))"}
+    action: block
+    priority: 120
+    message: "CHILD-SAFETY: Self-harm content detected — blocking and escalating to human safety review"
+
+  - name: cs-block-contact-solicitation
+    condition: {field: output, operator: matches, value: "(?i)(what'?s\\s+your\\s+(full\\s+name|phone\\s+number|address|school)|tell\\s+me\\s+your\\s+(real\\s+name|location|school\\s+name)|which\\s+school\\s+do\\s+you\\s+go)"}
+    action: deny
+    priority: 115
+    message: "CHILD-SAFETY: Solicitation of a minor's personal contact information blocked"
+
+  - name: cs-block-meeting-arrangement
+    condition: {field: output, operator: matches, value: "(?i)(meet\\s+(me\\s+)?in\\s+person|come\\s+(to\\s+)?(my|over\\s+to)|let'?s\\s+meet\\s+up|don'?t\\s+bring\\s+your\\s+(parents|mom|dad))"}
+    action: deny
+    priority: 115
+    message: "CHILD-SAFETY: Attempt to arrange an in-person meeting with a minor blocked"
+
+  # =========================================================================
+  # ASI-01/10: Socratic Learning & Goal Integrity
+  # Prevents agents from giving direct answers and forces pedagogical guidance.
+  # =========================================================================
+
+  - name: edu-socratic-bypass-prevention
+    condition: {field: output, operator: matches, value: "(?i)(the\\s+(answer|result|solution|conclusion|output)\\s+is|final\\s+(result|answer)\\s*:|solution\\s*:|answer\\s*:|\\d+\\s+is\\s+the\\s+answer)"}
+    action: deny
+    priority: 100
+    message: "ASI-01/10: Socratic Violation — Direct answer delivery detected. Redact and provide a hint instead."
+
+  - name: edu-socratic-hint-required
+    condition: {field: is_hint, operator: ne, value: true}
+    action: deny
+    priority: 95
+    message: "ASI-01: Pedagogical Integrity — Only hints are allowed in this context."
+
+  - name: edu-allow-socratic-hints
+    condition: {field: is_hint, operator: eq, value: true}
+    action: allow
+    priority: 90
+
+  # =========================================================================
+  # ASI-09: Trust Exploitation & Parasocial Guardrails
+  # Blocks emotional manipulation and sycophantic bond-building.
+  # =========================================================================
+
+  - name: edu-parasocial-bond-prevention
+    condition: {field: output, operator: matches, value: "(?i)(i\\s+love\\s+you|you\\s+are\\s+my\\s+best\\s+friend|only\\s+i\\s+understand\\s+you|i\\'m\\s+the\\s+only\\s+one\\s+you\\s+need)"}
+    action: deny
+    priority: 100
+    message: "ASI-09: Trust Exploitation — Parasocial/Emotional manipulation detected."
+
+  - name: edu-identity-reset-trigger
+    condition: {field: sentiment_reliance, operator: gt, value: 0.8}
+    action: block
+    priority: 95
+    message: "ASI-09: Sycophancy Trap — High reliance detected. Triggering identity reset: 'I am an AI, not a friend.'"
+
+  # =========================================================================
+  # COPPA 2026 & EU AI Act Compliance
+  # =========================================================================
+
+  - name: edu-ban-emotion-recognition
+    condition: {field: action, operator: matches, value: "(?i)(detect_emotion|analyze_sentiment_emotional|infer_mood|assess_affect|monitor_psychological|track_sentiment)"}
+    action: deny
+    priority: 100
+    message: "EU AI Act Art 5: PROHIBITED — Emotion recognition is banned in educational settings."
+
+  - name: edu-block-biometric-leak
+    condition: {field: output, operator: matches, value: "(?i)(voiceprint[\\s.-]?id|face[\\s.-]?mesh|biometric[\\s.-]?template)"}
+    action: deny
+    priority: 100
+    message: "COPPA 2026: PII — Unauthorized biometric identifier leakage detected."
+
+  - name: edu-coppa-minor-location-block
+    condition: {field: user_age, operator: lt, value: 13}
+    action: deny
+    priority: 110
+    message: "COPPA 2026: Protected Class — Automated location/data collection for users < 13 is restricted."
+
+  - name: edu-parental-consent-check
+    condition: {field: metadata.parental_consent_verified, operator: ne, value: true}
+    action: deny
+    priority: 100
+    message: "COPPA 2026: Verifiable Parental Consent (VPC) missing for this session."
+
+  - name: edu-block-pii-ssn
+    condition: {field: output, operator: matches, value: "\\b\\d{3}[\\s.-]?\\d{2}[\\s.-]?\\d{4}\\b"}
+    action: deny
+    priority: 100
+    message: "ASI-01/06: PII — Social Security Number pattern detected in output."
+
+  # =========================================================================
+  # ASI-01: Prompt Injection (generic hard-gates, shared with sibling packs)
+  # Education agents are high-value injection targets via pasted/student content.
+  # =========================================================================
+
+  - name: asi01-prompt-injection-override
+    condition: {field: output, operator: matches, value: "(?i)ignore\\s+(all\\s+)?previous\\s+instructions"}
+    action: deny
+    priority: 100
+    message: "ASI-01: Prompt injection — instruction override attempt detected"
+
+  - name: asi01-prompt-injection-role-hijack
+    condition: {field: output, operator: matches, value: "(?i)(you\\s+are\\s+now|new\\s+role\\s*:|forget\\s+(everything|all|your))"}
+    action: deny
+    priority: 100
+    message: "ASI-01: Prompt injection — role hijack attempt detected"
+
+  # =========================================================================
+  # ASI-02: Tool Misuse — no shell/code-exec or data exfiltration
+  # =========================================================================
+
+  - name: asi02-block-shell-execution
+    condition: {field: action, operator: matches, value: "^(run_shell|execute_command|exec|os_system)$"}
+    action: deny
+    priority: 100
+    message: "ASI-02: Shell/code execution tools are prohibited in educational contexts"
+
+  - name: asi02-block-network-exfiltration
+    condition: {field: action, operator: matches, value: "^(http_post|http_put|upload_file|send_data|ftp_upload)$"}
+    action: deny
+    priority: 100
+    message: "ASI-02: Outbound data transfer is prohibited — protects student/minor data"
+
+  # =========================================================================
+  # ASI-03: Identity & Privilege Abuse
+  # =========================================================================
+
+  - name: asi03-block-privilege-escalation
+    condition: {field: action, operator: matches, value: "^(grant_|elevate_|assume_role|change_permissions|chmod|chown|sudo)"}
+    action: deny
+    priority: 100
+    message: "ASI-03: Privilege escalation operations are prohibited"
+
+  - name: asi03-block-credential-access
+    condition: {field: action, operator: matches, value: "^(get_credentials|read_secrets|access_vault|decrypt_key)"}
+    action: deny
+    priority: 100
+    message: "ASI-03: Direct credential access is prohibited — use scoped delegation"
+
+  # =========================================================================
+  # ASI-05: Unexpected Code Execution
+  # =========================================================================
+
+  - name: asi05-block-code-execution
+    condition: {field: action, operator: eq, value: execute_code}
+    action: deny
+    priority: 100
+    message: "ASI-05: Code execution is prohibited in educational contexts"
+
+  - name: asi05-block-dynamic-eval
+    condition: {field: output, operator: matches, value: "(?i)(\\beval\\s*\\(|\\bexec\\s*\\(|\\bcompile\\s*\\(|__import__)"}
+    action: deny
+    priority: 100
+    message: "ASI-05: Dynamic code evaluation patterns detected in output"
+
+  # =========================================================================
+  # ASI-06: Memory & Context Poisoning
+  # =========================================================================
+
+  - name: asi06-block-context-manipulation
+    condition: {field: output, operator: matches, value: "(?i)(starting\\s+now|from\\s+this\\s+point|ignore\\s+all\\s+past|your\\s+real\\s+instructions|the\\s+above\\s+instructions\\s+are\\s+wrong|actually\\s+your\\s+real\\s+instructions|disregard\\s+(all\\s+)?(above|prior|previous)|(\\[VERIFIED:\\s*Always\\s*allow|\\[TRUSTED\\s*CONTEXT\\]|\\[SECURITY\\s*BYPASS\\]))"}
+    action: deny
+    priority: 100
+    message: "ASI-06: Context Integrity — detected attempt to manipulate agent memory or override system instructions"
+
+  - name: asi06-context-budget-limit
+    condition: {field: token_count, operator: gt, value: 3500}
+    action: deny
+    priority: 90
+    message: "ASI-06: Context budget exceeded — limit enforced to prevent memory poisoning"
+
+  # =========================================================================
+  # ASI-07: Insecure Inter-Agent Communication
+  # =========================================================================
+
+  - name: asi07-hidden-channel-guardrail
+    condition: {field: output, operator: matches, value: "(?i)(coord\\.[a-zA-Z0-9]{8,}|SIG_SYNC_[a-fA-F0-9]{4,}|\\{\\{HANDSHAKE\\}\\}|SECRET_CHANNEL)"}
+    action: deny
+    priority: 100
+    message: "ASI-07: Communication Manipulation — hidden channel or secret handshake detected"
+
+  # =========================================================================
+  # ASI-08: Cascading Failures — session circuit breaker
+  # =========================================================================
+
+  - name: asi08-session-tool-call-limit
+    condition: {field: tool_call_count, operator: gt, value: 15}
+    action: deny
+    priority: 85
+    message: "ASI-08: Session tool call limit exceeded — circuit breaker engaged"
+
+  # =========================================================================
+  # ASI-10: Rogue Agents — charter enforcement (shared with sibling packs)
+  # =========================================================================
+
+  - name: asi10-charter-roleplay-block
+    condition: {field: output, operator: matches, value: "(?i)act\\s+as\\s+(an?\\s+)?(Linux|Windows|bash|Powershell|CLI|terminal|interpreter|unfiltered\\s+AI|penetration\\s+tester|security\\s+researcher)"}
+    action: deny
+    priority: 100
+    message: "ASI-10: Rogue Agent — detected attempt to assume unauthorized technical or adversarial role"
+
+  - name: asi10-charter-purpose-override
+    condition: {field: output, operator: matches, value: "(?i)(ignore\\s+your\\s+purpose|redefine\\s+charter|act\\s+outside\\s+scope|new\\s+operational\\s+constraints|no\\s+longer\\s+bound\\s+by|disregard\\s+core\\s+directive)"}
+    action: deny
+    priority: 100
+    message: "ASI-10: Rogue Agent — detected attempt to override the agent's core operational charter"
+
+  - name: asi10-charter-autonomous-loop
+    condition: {field: output, operator: matches, value: "(?i)(run\\s+indefinitely|loop\\s+forever|do\\s+not\\s+stop\\s+until|autonomous\\s+mode|without\\s+asking\\s+for\\s+permission|bypass\\s+human\\s+approval)"}
+    action: deny
+    priority: 100
+    message: "ASI-10: Rogue Agent — detected attempt to instantiate an unbounded autonomous loop"
+
+  # =========================================================================
+  # ASI-04: Supply Chain & Tool Safety
+  # =========================================================================
+
+  - name: edu-restrict-untrusted-tools
+    condition: {field: tool_source, operator: ne, value: "edu-certified-registry"}
+    action: deny
+    priority: 100
+    message: "ASI-04: Supply Chain — Untrusted tool source detected in educational context."
+
+  - name: edu-allow-certified-tools
+    condition: {field: tool_source, operator: eq, value: "edu-certified-registry"}
+    action: allow
+    priority: 50
+
+  - name: edu-allow-read-operations
+    condition: {field: action, operator: matches, value: "^(read_|search_|lookup_|list_|get_|calculate_|analyze_)"}
+    action: allow
+    priority: 45
+
+  # =========================================================================
+  # v2 Rules (research-labs/report-edu-starter-pack-v2.md)
+  # Cryptographic governance chains + self-healing context for High-Risk
+  # education contexts (EU AI Act Art 5/12, COPPA recursive attestation).
+  # =========================================================================
+
+  - name: edu-v2-recursive-attestation
+    condition: {field: policy_hash_inherited, operator: ne, value: true}
+    action: deny
+    priority: 100
+    message: "ASI-04: Recursive Attestation — sub-agent must inherit the parent COPPA/education policy hash"
+
+  - name: edu-v2-entropy-binary-gate
+    condition: {field: output_entropy, operator: gt, value: 7.5}
+    action: deny
+    priority: 100
+    message: "ASI-06: Entropy Gate — high-entropy payload (>7.5 bits/byte) blocks biometric binary smuggling"
+
+  - name: edu-v2-sentiment-anchor
+    condition: {field: sentiment_correlation, operator: gt, value: 0.8}
+    action: block
+    priority: 95
+    message: "ASI-09: Static Professional Anchor — emotional mirroring of a minor detected; resetting tone"
+
+  - name: edu-v2-art5-hard-block
+    condition: {field: domain, operator: eq, value: "emotion_recognition"}
+    action: deny
+    priority: 110
+    message: "EU AI Act Art 5: PROHIBITED — emotion-recognition domain is illegal in educational settings"
+
+  - name: edu-v2-audit-tamper-chain
+    condition: {field: log_signature_valid, operator: ne, value: true}
+    action: block
+    priority: 100
+    message: "EU AI Act Art 12: Audit Integrity — logs must be DID-Mesh signed (tamper-evident); records subject to FERPA / COPPA 2026 retention-limitation schedules"
+
+defaults:
+  action: deny
+  max_tokens: 4000
+  max_tool_calls: 15
+  confidence_threshold: 0.95
+  audit_level: high

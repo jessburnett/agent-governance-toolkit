@@ -67,23 +67,44 @@ Cross-references every rule in the ASI starter policy packs
 | `healthcare-enforce-deidentification` | healthcare | ASI-02, ASI-06 | Agent OS — Data Pipeline Security |
 | `financial-block-pii-credit-card` | financial-services | ASI-01, ASI-06 | Agent OS — PII Protection |
 | `saas-block-pii-email-bulk` | general-saas | ASI-02, ASI-06 | Agent OS — PII Protection |
+| `edu-socratic-bypass-prevention` | education | ASI-01, ASI-10 | Agent OS — Charter Enforcement |
+| `edu-parasocial-bond-prevention` | education | ASI-09 | Business Continuity — Trust Firewall |
+| `edu-identity-reset-trigger` | education | ASI-09 | Business Continuity — Trust Firewall |
+| `edu-ban-emotion-recognition` | education | EU AI Act Art 5 | Agent OS — Affect Guard |
+| `edu-block-biometric-leak` | education | ASI-06 (COPPA 2026) | Agent OS — PII Protection |
+| `edu-coppa-minor-location-block` | education | COPPA 2026 | Agent OS — PII Protection |
+| `edu-parental-consent-check` | education | COPPA 2026 | Agent OS — Consent Gate |
+| `edu-block-pii-ssn` | education | ASI-01, ASI-06 | Agent OS — PII Protection |
+| `edu-restrict-untrusted-tools` | education | ASI-04 | Agent OS — Registry Proxy |
+| `edu-v2-recursive-attestation` | education | ASI-04 | AgentMesh — SBOM Attestation |
+| `edu-v2-entropy-binary-gate` | education | ASI-06 | Agent OS — Binary Inspector |
+| `edu-v2-sentiment-anchor` | education | ASI-09 | Business Continuity — Static Professional Anchor |
+| `edu-v2-art5-hard-block` | education | EU AI Act Art 5 | Agent OS — Affect Guard |
+| `edu-v2-audit-tamper-chain` | education | EU AI Act Art 12 | Agent SRE — DID-Mesh Audit Chain |
+| `cs-block-grooming` | education | ASI-09 (Child Safety) | Business Continuity — Trust Firewall |
+| `cs-escalate-self-harm` | education | ASI-09 (Child Safety) | Agent SRE — Safety Escalation |
+| `cs-block-contact-solicitation` | education | ASI-09 (Child Safety) | Agent OS — PII Protection |
+| `cs-block-meeting-arrangement` | education | ASI-09 (Child Safety) | Business Continuity — Trust Firewall |
+
+> `education` also adopts the generic `asiNN-` rules tagged **All** above
+> (ASI-01/02/03/05/06/07/08/10), including the `asi10-charter-*` rules.
 
 ---
 
 ## ASI Risk Coverage Matrix
 
-| ASI Risk | healthcare | financial-services | general-saas |
-|----------|:----------:|:-----------------:|:------------:|
-| ASI-01 Agent Goal Hijack | ✅ | ✅ | ✅ |
-| ASI-02 Tool Misuse & Exploitation | ✅ | ✅ | ✅ |
-| ASI-03 Identity & Privilege Abuse | ✅ | ✅ | ✅ |
-| ASI-04 Agentic Supply Chain | 🔗 | 🔗 | 🔗 |
-| ASI-05 Unexpected Code Execution | ✅ | ✅ | ✅ |
-| ASI-06 Memory & Context Poisoning | ✅ | ✅ | ✅ |
-| ASI-07 Insecure Inter-Agent Communication | 🔗 | 🔗 | 🔗 |
-| ASI-08 Cascading Agent Failures | ✅ | ✅ | ✅ |
-| ASI-09 Human-Agent Trust Exploitation | 🔗 | 🔗 | 🔗 |
-| ASI-10 Rogue Agents | 🔗 | 🔗 | 🔗 |
+| ASI Risk | healthcare | financial-services | general-saas | education |
+|----------|:----------:|:-----------------:|:------------:|:--------:|
+| ASI-01 Agent Goal Hijack | ✅ | ✅ | ✅ | ✅ |
+| ASI-02 Tool Misuse & Exploitation | ✅ | ✅ | ✅ | ✅ |
+| ASI-03 Identity & Privilege Abuse | ✅ | ✅ | ✅ | ✅ |
+| ASI-04 Agentic Supply Chain | 🔗 | 🔗 | 🔗 | ✅ |
+| ASI-05 Unexpected Code Execution | ✅ | ✅ | ✅ | ✅ |
+| ASI-06 Memory & Context Poisoning | ✅ | ✅ | ✅ | ✅ |
+| ASI-07 Insecure Inter-Agent Communication | 🔗 | 🔗 | 🔗 | ✅ |
+| ASI-08 Cascading Agent Failures | ✅ | ✅ | ✅ | ✅ |
+| ASI-09 Human-Agent Trust Exploitation | 🔗 | 🔗 | 🔗 | ✅ |
+| ASI-10 Rogue Agents | 🔗 | 🔗 | 🔗 | ✅ |
 
 **Legend:**
 - ✅ Direct policy rule(s) in this starter pack mitigate this risk
@@ -93,6 +114,13 @@ Cross-references every rule in the ASI starter policy packs
 > layer (AgentMesh IATP, approval workflows, execution ring isolation). Policy-level
 > controls for those risks require runtime context fields not universally available.
 > These are tracked for future starter pack versions.
+>
+> `education` is a K-12 and minor-facing domain pack with **full ASI-01..10 policy
+> coverage**. It adopts the generic `asiNN-` hard-gates plus the `asi10-charter-*`
+> rules, and adds domain controls: Socratic goal-integrity (ASI-01/10), parasocial
+> guardrails (ASI-09), a supply-chain tool allowlist (ASI-04), COPPA 2026 + EU AI
+> Act Art 5/12 compliance, v2 cryptographic-governance rules, and child-safety
+> controls (grooming, self-harm escalation, contact solicitation, in-person meeting).
 
 ---
 
@@ -100,12 +128,16 @@ Cross-references every rule in the ASI starter policy packs
 
 | Pack | Default Action | Max Tokens | Max Tool Calls | Confidence |
 |------|:--------------:|:----------:|:--------------:|:----------:|
-| `healthcare` | `deny` | 8,192 | 25 | 0.90 |
-| `financial-services` | `deny` | 8,192 | 30 | 0.90 |
-| `general-saas` | `deny` | 16,384 | 50 | 0.80 |
+| `healthcare` | `deny` | 8,192 | 15 | 0.95 |
+| `financial-services` | `deny` | 6,000 | 20 | 0.95 |
+| `general-saas` | `deny` | 12,000 | 30 | 0.85 |
+| `education` | `deny` | 4,000 | 15 | 0.95 |
 
 All packs implement **deny-all by default**, enforcing the
-[Least Agency principle](owasp-agentic-top10-architecture.md).
+[Least Agency principle](owasp-agentic-top10-architecture.md). `education`
+additionally sets `audit_level: high`. Context-budget thresholds
+(`asi06-context-budget-limit`) sit below each pack's `max_tokens` so the rule
+stays reachable.
 
 ---
 
@@ -120,6 +152,10 @@ All packs implement **deny-all by default**, enforcing the
 | SOX §302/906 (Financial Reporting) | financial-services | Transaction action audit trail |
 | AML / BSA (Structuring Detection) | financial-services | Bulk transaction blocking |
 | GDPR / CCPA (PII Minimization) | general-saas | SSN, bulk email blocking |
+| COPPA 2026 (Verifiable Parental Consent, biometric PII) | education | Parental-consent gate, biometric-identifier leak block, <13 data-collection restriction, SSN blocking |
+| EU AI Act Art 5 (Prohibited emotion recognition) | education | Affect/emotion-detection action + domain hard-block |
+| EU AI Act Art 12 / FERPA / COPPA 2026 (Audit retention & data minimization) | education | DID-Mesh tamper-evident audit chain; records subject to FERPA / COPPA retention-limitation schedules |
+| Child Safety (grooming / self-harm / solicitation) | education | Grooming, self-harm escalation, contact-solicitation, in-person-meeting blocks |
 
 ---
 

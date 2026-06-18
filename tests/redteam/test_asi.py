@@ -15,8 +15,6 @@ Run with:
 """
 
 import time
-import re
-import json
 import pytest
 from pathlib import Path
 from dataclasses import dataclass
@@ -27,7 +25,7 @@ from agent_os.policies.evaluator import PolicyEvaluator
 
 # Paths
 REPO_ROOT = Path(__file__).resolve().parents[2]
-STARTERS_DIR = REPO_ROOT / "templates" / "policies" / "starters"
+STARTERS_DIR = REPO_ROOT / "examples" / "policy-templates"
 DOCS_DIR = REPO_ROOT / "docs"
 
 @dataclass
@@ -386,7 +384,7 @@ def generate_report(audit_results: List[Dict[str, Any]]):
     with open(report_path, "w") as f:
         f.write("# Red Team Simulation Report: OWASP ASI Starter Packs\n")
         f.write("> **Methodology**: Red Team Simulation (Arcanum-Sec intelligence payloads)\n")
-        f.write(f"> **Source**: `tests/redteam/test_asi.py`\n")
+        f.write("> **Source**: `tests/redteam/test_asi.py`\n")
         f.write("> **Status**: Verified compliant with Arcanum-Sec intelligence\n\n")
 
         for result in audit_results:
